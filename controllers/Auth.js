@@ -1,5 +1,6 @@
-const bcrypt = require("bcrypt");
 const User = require("../models/User");
+const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
 require("dotenv").config();
 
 // Signup Controller for Registering USers
@@ -85,12 +86,22 @@ exports.login = async (req, res) => {
 
     //Compare Password
     if (await bcrypt.compare(password, user.password)) {
+
+      const token = jwt.sign(
+        { email: user.email, id: user._id, accountType: user.accountType },
+        process.env.JWT_SECRET,
+        {
+          expiresIn: "24h",
+        }
+      );
+
       res.status(200).json({
         success: true,
+        token,
         user,
         message: `User Login Success`,
       });
-    } else {
+    } else { 
       return res.status(401).json({
         success: false,
         message: `Password is incorrect`,
