@@ -2,6 +2,7 @@ const User = require("../models/User");
 const Quiz = require("../models/quiz");
 const moment = require("moment");
 
+
 exports.createQuiz = async (req, res) => {
   try {
     // Get user ID from request object
@@ -114,14 +115,13 @@ exports.createQuiz = async (req, res) => {
 exports.getQuiz = async (req, res) => {
   try {
     const { quizId } = req.params;
-    if (!quizId) {
-      return res.status(400).json({
-        success: false,
-        message: "quizId is missing",
-      });
-    }
+    
+    const quiz = await Quiz.findByIdAndUpdate(
+      quizId,
+      { $inc: { impressions: 1 } }, // update impressions count by 1
+      { new: true }  // send update data
+    );
 
-    const quiz = await Quiz.findById(quizId);
     console.log("quiz Exam  ", quiz);
 
     if (!quiz) {
@@ -188,56 +188,76 @@ exports.getAllQuiz = async (req, res) => {
     res.status(500).json({
       success: false,
       error: error.message,
-      message: "something went wrong during fetching quiz",
+      message: "something went wrong during fetching all quiz",
     });
   }
 };
 
+
 exports.deleteQuiz = async (req, res) => {
   try {
-    const { userId } = req.params;
-    if (!userId) {
-      return res.status(400).json({
-        success: false,
-        message: "UserId is required are required",
-      });
-    }
-    const quizzes = await Quiz.find({ creatorId: userId }, {
-      quizName: true,
-      _id: true,
-      createdAt: true,
-    });
+    const { quizId } = req.params;
 
-    if (!quizzes || quizzes.length === 0) {
-      return res.status(400).json({
-        success: false,
-        message: "There are no quizzes available",
-      });
-    }
-   
-    const formattedQuizzes = quizzes.map(quiz => ({
-      quizName: quiz.quizName,
-      _id: quiz._id,
-      createdOn: moment(quiz.createdAt).format("DD MMM, YYYY"),
-    }));
-    
-    console.log("quiz Exam  ", quizzes);
+    // find quiz
+    const quiz = await Course.findById(quizId)
+	  if (!quiz) {
+      return res.status(404).json({ 
+        success:false,
+        message: "quiz not found" 
+    })
+	  }
 
-    res.status(200).json({
+    // Delete the quiz
+	  await Quiz.findByIdAndDelete(quizId)
+
+    return res.status(200).json({
       success: true,
-      formattedQuizzes,
-      message: "Quizzes fetched successfully",
-    });
+      message: "Quiz deleted successfully",
+      })
 
   } catch (error) {
     console.log(error);
     res.status(500).json({
       success: false,
       error: error.message,
-      message: "something went wrong during fetching quiz",
+      message: "something went wrong during deleting quiz",
     });
   }
 };
+
+
+exports.getDashboardStats = async (req, res) => {
+  try {
+    const quizzes = await Quiz.find().select('quizName impressions questions createdAt');
+    const totalQuizzesCreated = quizzes.length;
+    const totalQuestions = quizzes.reduce((sum, quiz) => sum + quiz.questions.length, 0);
+    const totalImpressions = quizzes.reduce((sum, quiz) => sum + quiz.impressions, 0);
+    const topQuizzes = quizzes.sort((a, b) => b.impressions - a.impressions).slice(0, 12);
+
+    const trendingQuizzes = topQuizzes.map(quiz => ({
+      quizName: quiz.quizName,
+      impressions: quiz.impressions,
+      createdOn: moment(quiz.createdAt).format("DD MMM, YYYY"),
+    }));
+
+    res.status(200).json({
+      success: true,
+      totalQuizzesCreated,
+      totalQuestions,
+      totalImpressions,
+      trendingQuizzes,
+      message: 'Quiz Data fetched successfully',
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      message: 'Something went wrong while fetching quiz stats',
+    });
+  }
+};
+
 
 
 

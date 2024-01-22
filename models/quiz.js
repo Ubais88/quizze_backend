@@ -52,6 +52,10 @@ const quizSchema = new mongoose.Schema({
 		required: true,
 		ref: "user",
 	},
+  impressions: {
+    type: Number,
+    default: 0,
+  },
   createdAt: {
     type: Date,
     default: Date.now,
