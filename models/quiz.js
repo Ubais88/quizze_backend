@@ -46,6 +46,16 @@ const quizSchema = new mongoose.Schema({
     default: "",
   }],
   questions: [questionSchema], 
+
+  creatorId: {
+		type: mongoose.Schema.Types.ObjectId,
+		required: true,
+		ref: "user",
+	},
+  createdAt: {
+    type: Date,
+    default: Date.now,
+  },
 });
 
 

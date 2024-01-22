@@ -23,6 +23,12 @@ const userSchema = new mongoose.Schema(
 			required: true,
             // minLenght:6
 		},
+		// quizzes: [
+		// 	{
+		// 		type: mongoose.Schema.Types.ObjectId,
+		// 		ref: "Quiz",
+		// 	},
+		// ],
 	},
 	{ timestamps: true }
 );
