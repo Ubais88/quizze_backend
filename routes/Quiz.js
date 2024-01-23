@@ -9,7 +9,7 @@ const { authMiddleware } = require('../middlewares/authMiddleware')
 
 // Route for user createQuiz 
 router.post("/create",authMiddleware , createQuiz)
-router.post("/getallquiz",authMiddleware, getAllQuiz)
+router.get("/getallquiz",authMiddleware, getAllQuiz)
 router.get('/play/:quizId', getQuiz)
 router.get('/getstats', authMiddleware , getDashboardStats)
 router.post('/updatequiz/:quizId', updateQuiz)

@@ -143,6 +143,7 @@ exports.getAllQuiz = async (req, res) => {
         quizName: true,
         _id: true,
         createdAt: true,
+        impressions:true
       }
     );
 
@@ -157,6 +158,7 @@ exports.getAllQuiz = async (req, res) => {
       quizName: quiz.quizName,
       _id: quiz._id,
       createdOn: moment(quiz.createdAt).format("DD MMM, YYYY"),
+      impressions:quiz.impressions
     }));
 
     console.log("quiz Exam  ", quizzes);
