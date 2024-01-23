@@ -15,6 +15,7 @@ const userSchema = new mongoose.Schema(
 			type: String,
 			required: true,
 			trim: true,
+			unique: true,
 		},
 
 		// Define the password field with type String and required
@@ -23,6 +24,9 @@ const userSchema = new mongoose.Schema(
 			required: true,
             // minLenght:6
 		},
+		// token: {
+		// 	type: String,
+		// },
 		// quizzes: [
 		// 	{
 		// 		type: mongoose.Schema.Types.ObjectId,

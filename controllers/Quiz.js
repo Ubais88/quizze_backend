@@ -4,7 +4,8 @@ const moment = require("moment");
 exports.createQuiz = async (req, res) => {
   try {
     // Get user ID from request object
-    const { userId } = req.params;
+    // const userId = req.user.id;
+    console.log("userId: " + userId);
 
     if (!userId) {
       return res.status(400).json({
@@ -129,7 +130,7 @@ exports.getQuiz = async (req, res) => {
 
 exports.getAllQuiz = async (req, res) => {
   try {
-    const { userId } = req.params;
+    const userId = req.user.id;
     if (!userId) {
       return res.status(400).json({
         success: false,
@@ -207,25 +208,35 @@ exports.deleteQuiz = async (req, res) => {
 
 exports.getDashboardStats = async (req, res) => {
   try {
-    const quizzes = await Quiz.find().select(
+    const userId = req.user.id;
+    const quizzes = await Quiz.find({ creatorId: userId }).select(
       "quizName impressions questions createdAt"
     );
+
     const totalQuizzesCreated = quizzes.length;
     const totalQuestions = quizzes.reduce(
       (sum, quiz) => sum + quiz.questions.length,
       0
     );
-    const totalImpressions = quizzes.reduce(
-      (sum, quiz) => sum + quiz.impressions,
-      0
+
+    const formatImpressions = (impressions) => {
+      if (impressions >= 1000) {
+        return `${(impressions / 1000).toFixed(1)}k`;
+      }
+      return impressions.toString();
+    };
+
+    const totalImpressions = formatImpressions(
+      quizzes.reduce((sum, quiz) => sum + quiz.impressions, 0)
     );
+
     const topQuizzes = quizzes
       .sort((a, b) => b.impressions - a.impressions)
       .slice(0, 12);
 
     const trendingQuizzes = topQuizzes.map((quiz) => ({
       quizName: quiz.quizName,
-      impressions: quiz.impressions,
+      impressions: formatImpressions(quiz.impressions),
       createdOn: moment(quiz.createdAt).format("DD MMM, YYYY"),
     }));
 
@@ -246,6 +257,7 @@ exports.getDashboardStats = async (req, res) => {
     });
   }
 };
+
 
 exports.updateQuiz = async (req, res) => {
   try {
@@ -307,8 +319,6 @@ exports.updateQuiz = async (req, res) => {
   }
 };
 
-
-
 // Helper Functions
 // validate Q&A quizType
 const validateQnAQuiz = (questions) => {
@@ -325,10 +335,10 @@ const validateQnAQuiz = (questions) => {
 
   for (const question of questions) {
     const result = validateQuestion(question);
-    if (!result.success ) {
+    if (!result.success) {
       return result;
     }
-    const sameTypes = validateOptionTypes(question)
+    const sameTypes = validateOptionTypes(question);
     const validateSingleCorrect = validateCorrectOption(question);
     if (!validateSingleCorrect.success || !sameTypes.success) {
       return validateSingleCorrect;
@@ -357,8 +367,8 @@ const validatePollQuiz = (questions) => {
       return result;
     }
 
-    const sameTypes = validateOptionTypes(question)
-    console.log("same types: " , sameTypes)
+    const sameTypes = validateOptionTypes(question);
+    console.log("same types: ", sameTypes);
     if (!sameTypes.success) {
       return sameTypes;
     }
@@ -399,13 +409,12 @@ const validateCorrectOption = (question) => {
 // Check if all options have the same type
 const validateOptionTypes = (question) => {
   const types = question.options.map((option) => option.type);
-  console.log("types: ", types);  // Log the types array
+  console.log("types: ", types); // Log the types array
   if (new Set(types).size !== 1) {
     return {
       success: false,
       message: "All options types must have the same type",
     };
-  } 
+  }
   return { success: true };
 };
-

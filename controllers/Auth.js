@@ -7,7 +7,7 @@ require("dotenv").config();
 exports.signup = async (req, res) => {
   try {
     // Destructure fields from the request body
-    const { name, email, password, confirmPassword } = req.body;
+    const { name, email, password, cPassword } = req.body;
 
     // Check if All Details are there or not
     if (!name || !email || !password) {
@@ -17,7 +17,7 @@ exports.signup = async (req, res) => {
       });
     }
     // Check if password and confirm password match
-    if (password !== confirmPassword) {
+    if (password !== cPassword) {
       return res.status(400).json({
         success: false,
         message:
@@ -88,7 +88,10 @@ exports.login = async (req, res) => {
     if (await bcrypt.compare(password, user.password)) {
 
       const token = jwt.sign(
-        { email: user.email, id: user._id, accountType: user.accountType },
+        { 
+          email: user.email,
+          id: user._id.toString(),
+        },
         process.env.JWT_SECRET,
         {
           expiresIn: "24h",
