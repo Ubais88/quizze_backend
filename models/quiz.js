@@ -1,27 +1,77 @@
 const mongoose = require("mongoose");
 
-
-// Define a common sub-schema for options
 const optionSchema = new mongoose.Schema({
   type: {
     type: String,
     enum: ["text", "imageurl", "textandimageurl"],
     required: true,
   },
-  optionText: String,
+  optionText: {
+    type: String,
+    required: function () {
+      return this.type === "text" || this.type === "textandimageurl";
+    },
+  },
+  imageUrl: {
+    type: String,
+    required: function () {
+      return this.type === "imageurl" || this.type === "textandimageurl";
+    },
+  },
   correct: {
     type: Boolean,
     default: false,
-  },
+  }, 
 });
 
-// questoins schema containing option schema
+
 const questionSchema = new mongoose.Schema({
   questionText: {
     type: String,
     required: true,
   },
   options: [optionSchema],
+
+  // Common fields for both Q&A and Poll types
+  correctOption: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Option",
+  },
+
+  // Fields specific to Q&A type
+  totalAnswers: {
+    type: Number,
+    default: 0,
+    required: function () {
+      return this.parent().quizType === "Q&A";
+    },
+  },
+  correctAnswers: {
+    type: Number,
+    default: 0,
+    required: function () {
+      return this.parent().quizType === "Q&A";
+    },
+  },
+  wrongAnswers: {
+    type: Number,
+    default: 0,
+    required: function () {
+      return this.parent().quizType === "Q&A";
+    },
+  },
+
+  // Fields specific to Poll type
+  optionCounts: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Option",
+      selectCount: {
+        type: Number,
+        default: 0,
+      },
+    },
+  ],
 });
 
 
@@ -38,20 +88,18 @@ const quizSchema = new mongoose.Schema({
   },
   timeLimit: {
     type: Number,
-    enum: [0, 5 , 10],
+    enum: [0, 5, 10],
     default: 0,
   },
-  userSelectedOption: [{
-    type: String,
-    default: "",
-  }],
-  questions: [questionSchema], 
+  
+  questions: [questionSchema],
 
   creatorId: {
-		type: mongoose.Schema.Types.ObjectId,
-		required: true,
-		ref: "user",
-	},
+    type: mongoose.Schema.Types.ObjectId,
+    required: true,
+    ref: "user",
+  },
+
   impressions: {
     type: Number,
     default: 0,
@@ -61,8 +109,6 @@ const quizSchema = new mongoose.Schema({
     default: Date.now,
   },
 });
-
-
 
 
 module.exports = mongoose.model("Quiz", quizSchema);
