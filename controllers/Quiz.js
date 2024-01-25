@@ -4,8 +4,8 @@ const moment = require("moment");
 exports.createQuiz = async (req, res) => {
   try {
     // Get user ID from request object
-    // const userId = req.user.id;
-    console.log("userId: " + userId);
+    const userId = req.user.id;
+    // console.log("userId: " + userId);
 
     if (!userId) {
       return res.status(400).json({
@@ -16,6 +16,7 @@ exports.createQuiz = async (req, res) => {
     // Validate request body
     const { quizName, quizType, timeLimit, questions } = req.body;
 
+    console.log("quizName, quizType, timeLimit, questions", quizName, quizType, timeLimit, questions)
     // Check fields are present or not
     if (!quizName || !quizType) {
       return res.status(400).json({
@@ -71,7 +72,8 @@ exports.createQuiz = async (req, res) => {
 
     res.status(201).json({
       success: true,
-      newQuiz,
+      // newQuiz,
+      quizId:newQuiz._id,
       message: "Quiz created successfully",
     });
   } catch (error) {
@@ -94,15 +96,46 @@ exports.createQuiz = async (req, res) => {
   }
 };
 
+exports.playQuiz = async (req, res) => {
+  try {
+    const { quizId } = req.params;
+
+    const savedQuiz = await Quiz.findByIdAndUpdate(
+      quizId,
+      { $inc: { impressions: 1 } }, // update impressions count by 1
+      { new: true } // send update data
+    ).select('questions timeLimit quizType')
+
+    console.log("quiz Exam  ", savedQuiz);
+
+    if (!savedQuiz) {
+      return res.status(400).json({
+        success: false,
+        message: "Quiz is missing or quizId is wrong",
+      });
+    }
+
+    res.status(200).json({ 
+      success: true,
+      savedQuiz,
+      message: "quiz fetched successfully",
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      message: "something went wrong during fetching quiz",
+    });
+  }
+};
+
+
 exports.getQuiz = async (req, res) => {
   try {
     const { quizId } = req.params;
 
-    const quiz = await Quiz.findByIdAndUpdate(
-      quizId,
-      { $inc: { impressions: 1 } }, // update impressions count by 1
-      { new: true } // send update data
-    );
+    const quiz = await Quiz.findById(quizId)
 
     console.log("quiz Exam  ", quiz);
 
@@ -113,7 +146,7 @@ exports.getQuiz = async (req, res) => {
       });
     }
 
-    res.status(200).json({
+    res.status(200).json({ 
       success: true,
       quiz,
       message: "quiz fetched successfully",
@@ -127,6 +160,65 @@ exports.getQuiz = async (req, res) => {
     });
   }
 };
+
+
+exports.quizAnalysis = async (req, res) => {
+  try {
+    const { quizId } = req.params;
+
+    const savedQuiz = await Quiz.findByIdAndUpdate(
+      quizId,
+      { new: true } // send update data
+    )
+
+    console.log("quiz Exam  ", savedQuiz);
+
+    if (!savedQuiz) {
+      return res.status(400).json({
+        success: false,
+        message: "Quiz is missing or quizId is wrong",
+      });
+    }
+    if(savedQuiz.quizType === "Poll"){
+      const quiz = {
+        quizType:savedQuiz.quizType,
+        quizName: savedQuiz.quizName,
+        questions: savedQuiz.questions,
+        impressions: savedQuiz.impressions,
+        createdOn: moment(savedQuiz.createdAt).format("DD MMM, YYYY"),
+      }
+      res.status(200).json({ 
+        success: true,
+        savedQuiz,
+        quiz,
+        message: "quiz fetched successfully",
+      });
+    }else{
+      const quiz = {
+        quizType:savedQuiz.quizType,
+        quizName: savedQuiz.quizName,
+        questions: savedQuiz.questions,
+        impressions: savedQuiz.impressions,
+        createdOn: moment(savedQuiz.createdAt).format("DD MMM, YYYY"),
+      }
+      res.status(200).json({ 
+        success: true,
+        savedQuiz,
+        quiz,
+        message: "quiz fetched successfully",
+      });
+    }
+    
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      message: "something went wrong during fetching quiz",
+    });
+  }
+};
+
 
 exports.getAllQuiz = async (req, res) => {
   try {
@@ -180,10 +272,10 @@ exports.getAllQuiz = async (req, res) => {
 
 exports.deleteQuiz = async (req, res) => {
   try {
-    const { quizId } = req.params;
+    const {quizId}  = req.params;
 
     // find quiz
-    const quiz = await Course.findById(quizId);
+    const quiz = await Quiz.findById(quizId);
     if (!quiz) {
       return res.status(404).json({
         success: false,
@@ -308,7 +400,7 @@ exports.updateQuiz = async (req, res) => {
 
     res.status(201).json({
       success: true,
-      updatedQuiz,
+      quizId:updatedQuiz._id,
       message: "Quiz updated successfully",
     });
   } catch (error) {
@@ -320,6 +412,14 @@ exports.updateQuiz = async (req, res) => {
     });
   }
 };
+
+
+
+
+
+
+
+
 
 // Helper Functions
 // validate Q&A quizType

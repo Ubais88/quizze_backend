@@ -1,6 +1,10 @@
 const mongoose = require("mongoose");
 
 const optionSchema = new mongoose.Schema({
+  id: {
+    type: Number,
+    required: true,
+  },
   type: {
     type: String,
     enum: ["text", "imageurl", "textandimageurl"],
@@ -26,6 +30,10 @@ const optionSchema = new mongoose.Schema({
 
 
 const questionSchema = new mongoose.Schema({
+  id: {
+    type: Number,
+    required: true,
+  },
   questionText: {
     type: String,
     required: true,
@@ -73,7 +81,6 @@ const questionSchema = new mongoose.Schema({
     },
   ],
 });
-
 
 
 const quizSchema = new mongoose.Schema({

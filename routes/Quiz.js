@@ -4,19 +4,22 @@ const router = express.Router();
 
 
 // Import the required controllers and middleware functions
-const { createQuiz, getQuiz, getAllQuiz, getDashboardStats, updateQuiz } = require("../controllers/Quiz");
+const { createQuiz, getAllQuiz, getDashboardStats, updateQuiz, deleteQuiz, playQuiz, quizAnalysis, getQuiz } = require("../controllers/Quiz");
 const { authMiddleware } = require('../middlewares/authMiddleware')
 
 // Route for user createQuiz 
 router.post("/create",authMiddleware , createQuiz)
 router.get("/getallquiz",authMiddleware, getAllQuiz)
-router.get('/play/:quizId', getQuiz)
+router.get('/play/:quizId', playQuiz)
+router.get('/getquiz/:quizId', getQuiz)
 router.get('/getstats', authMiddleware , getDashboardStats)
-router.post('/updatequiz/:quizId', updateQuiz)
+router.put('/updatequiz/:quizId', updateQuiz)
+router.delete('/delete/:quizId', authMiddleware , deleteQuiz)
+router.get('/analysis/:quizId', authMiddleware , quizAnalysis)
 
 
 
-
+ 
 // Export the router for use in the main application
 module.exports = router;
 
