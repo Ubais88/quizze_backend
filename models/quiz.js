@@ -7,7 +7,7 @@ const optionSchema = new mongoose.Schema({
   },
   type: {
     type: String,
-    enum: ["text", "imageurl", "textandimageurl"],
+    enum: ["text", "imageurl", "text & imageurl"],
     required: true,
   },
   optionText: {
@@ -19,7 +19,7 @@ const optionSchema = new mongoose.Schema({
   imageUrl: {
     type: String,
     required: function () {
-      return this.type === "imageurl" || this.type === "textandimageurl";
+      return this.type === "textandimageurl";
     },
   },
   correct: {
