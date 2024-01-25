@@ -4,13 +4,14 @@ const router = express.Router();
 
 
 // Import the required controllers and middleware functions
-const { createQuiz, getAllQuiz, getDashboardStats, updateQuiz, deleteQuiz, playQuiz, quizAnalysis, getQuiz } = require("../controllers/Quiz");
+const { createQuiz, getAllQuiz, getDashboardStats, updateQuiz, deleteQuiz, playQuiz, quizAnalysis, getQuiz, getResult } = require("../controllers/Quiz");
 const { authMiddleware } = require('../middlewares/authMiddleware')
 
 // Route for user createQuiz 
 router.post("/create",authMiddleware , createQuiz)
 router.get("/getallquiz",authMiddleware, getAllQuiz)
 router.get('/play/:quizId', playQuiz)
+router.post('/result', getResult)
 router.get('/getquiz/:quizId', getQuiz)
 router.get('/getstats', authMiddleware , getDashboardStats)
 router.put('/updatequiz/:quizId', updateQuiz)

@@ -26,6 +26,10 @@ const optionSchema = new mongoose.Schema({
     type: Boolean,
     default: false,
   }, 
+  selectedCount: {
+    type: Number,
+    default: 0,
+  },
 });
 
 
@@ -40,12 +44,6 @@ const questionSchema = new mongoose.Schema({
   },
   options: [optionSchema],
 
-  // Common fields for both Q&A and Poll types
-  correctOption: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "Option",
-  },
-
   // Fields specific to Q&A type
   totalAnswers: {
     type: Number,
@@ -54,6 +52,7 @@ const questionSchema = new mongoose.Schema({
       return this.parent().quizType === "Q&A";
     },
   },
+  
   correctAnswers: {
     type: Number,
     default: 0,
@@ -70,16 +69,7 @@ const questionSchema = new mongoose.Schema({
   },
 
   // Fields specific to Poll type
-  optionCounts: [
-    {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Option",
-      selectCount: {
-        type: Number,
-        default: 0,
-      },
-    },
-  ],
+  selectedOptionIndexes: [Number],
 });
 
 

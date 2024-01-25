@@ -16,7 +16,13 @@ exports.createQuiz = async (req, res) => {
     // Validate request body
     const { quizName, quizType, timeLimit, questions } = req.body;
 
-    console.log("quizName, quizType, timeLimit, questions", quizName, quizType, timeLimit, questions)
+    console.log(
+      "quizName, quizType, timeLimit, questions",
+      quizName,
+      quizType,
+      timeLimit,
+      questions
+    );
     // Check fields are present or not
     if (!quizName || !quizType) {
       return res.status(400).json({
@@ -73,7 +79,7 @@ exports.createQuiz = async (req, res) => {
     res.status(201).json({
       success: true,
       // newQuiz,
-      quizId:newQuiz._id,
+      quizId: newQuiz._id,
       message: "Quiz created successfully",
     });
   } catch (error) {
@@ -102,11 +108,11 @@ exports.playQuiz = async (req, res) => {
 
     const savedQuiz = await Quiz.findByIdAndUpdate(
       quizId,
-      { $inc: { impressions: 1 } }, // update impressions count by 1
-      { new: true } // send update data
-    ).select('questions timeLimit quizType')
+      { $inc: { impressions: 1 } },
+      { new: true }
+    ).select("questions timeLimit quizType impressions");
 
-    console.log("quiz Exam  ", savedQuiz);
+    // console.log("quiz Exam Data : ", savedQuiz);
 
     if (!savedQuiz) {
       return res.status(400).json({
@@ -115,7 +121,7 @@ exports.playQuiz = async (req, res) => {
       });
     }
 
-    res.status(200).json({ 
+    res.status(200).json({
       success: true,
       savedQuiz,
       message: "quiz fetched successfully",
@@ -130,14 +136,121 @@ exports.playQuiz = async (req, res) => {
   }
 };
 
+// exports.playQuiz = async (req, res) => {
+//   try {
+//     const { quizId } = req.params;
+
+//     const savedQuiz = await Quiz.findById(quizId).select('questions timeLimit quizType')
+
+//     console.log("quiz Exam  ", savedQuiz);
+
+//     if (!savedQuiz) {
+//       return res.status(400).json({
+//         success: false,
+//         message: "Quiz is missing or quizId is wrong",
+//       });
+//     }
+
+//     res.status(200).json({
+//       success: true,
+//       savedQuiz,
+//       message: "Result Updated successfully",
+//     });
+
+//   } catch (error) {
+//     console.log(error);
+//     res.status(500).json({
+//       success: false,
+//       error: error.message,
+//       message: "something went wrong during fetching quiz",
+//     });
+//   }
+// };
+
+exports.getResult = async (req, res) => {
+  try {
+    const { quizId, userResponses, quizType } = req.body;
+    console.log("quizType", quizType);
+    const quiz = await Quiz.findById(quizId);
+    // Initialize variables for scoring and statistics
+    let correctAnswers = 0;
+
+    if (quizType === "Q&A") {
+      userResponses.forEach((userResponse) => {
+        const question = quiz.questions.find(
+          (q) => q.id === userResponse.questionId
+        );
+
+        if (question) {
+          const selectedOption = question.options[userResponse.selectedOption];
+
+          if (selectedOption) {
+            // Update question statistics
+            question.totalAnswers++;
+            if (selectedOption.correct) {
+              question.correctAnswers++;
+              correctAnswers++;
+            } else {
+              question.wrongAnswers++;
+            }
+          }
+        }
+      });
+      await quiz.save();
+
+    } else {
+      userResponses.forEach((userResponse) => {
+        const { questionId, selectedOption } = userResponse;
+        // Find the question
+        const question = quiz.questions.find((q) => q.id === questionId);
+      
+        if (!question) {
+          return res.status(400).json({
+            success: false,
+            message: "Question not found in the quiz",
+          });
+        }
+      
+        // Ensure selectedOption is within bounds
+        if (selectedOption >= 0 && selectedOption < question.options.length) {
+          const selectedOptionObj = question.options[selectedOption];
+          if (selectedOptionObj) {
+            selectedOptionObj.selectedCount += 1;
+          }
+        } else {
+          return res.status(400).json({
+            success: false,
+            message: "Invalid selected option index",
+          });
+        }
+      });
+      
+      await quiz.save();
+      
+    }
+
+
+    console.log("results", correctAnswers);
+    // Respond with the calculated score
+    res.status(200).json({
+      score: correctAnswers,
+      totalQuestions: quiz.questions.length,
+    });
+  } catch (error) {
+    console.error("Error submitting responses:", error);
+    res.status(500).json({
+      message: "Internal Server Error",
+    });
+  }
+};
 
 exports.getQuiz = async (req, res) => {
   try {
     const { quizId } = req.params;
 
-    const quiz = await Quiz.findById(quizId)
+    const quiz = await Quiz.findById(quizId);
 
-    console.log("quiz Exam  ", quiz);
+    // console.log("quiz Exam  ", quiz);
 
     if (!quiz) {
       return res.status(400).json({
@@ -146,7 +259,7 @@ exports.getQuiz = async (req, res) => {
       });
     }
 
-    res.status(200).json({ 
+    res.status(200).json({
       success: true,
       quiz,
       message: "quiz fetched successfully",
@@ -161,7 +274,6 @@ exports.getQuiz = async (req, res) => {
   }
 };
 
-
 exports.quizAnalysis = async (req, res) => {
   try {
     const { quizId } = req.params;
@@ -169,7 +281,7 @@ exports.quizAnalysis = async (req, res) => {
     const savedQuiz = await Quiz.findByIdAndUpdate(
       quizId,
       { new: true } // send update data
-    )
+    );
 
     console.log("quiz Exam  ", savedQuiz);
 
@@ -179,36 +291,35 @@ exports.quizAnalysis = async (req, res) => {
         message: "Quiz is missing or quizId is wrong",
       });
     }
-    if(savedQuiz.quizType === "Poll"){
+    if (savedQuiz.quizType === "Poll") {
       const quiz = {
-        quizType:savedQuiz.quizType,
+        quizType: savedQuiz.quizType,
         quizName: savedQuiz.quizName,
         questions: savedQuiz.questions,
         impressions: savedQuiz.impressions,
         createdOn: moment(savedQuiz.createdAt).format("DD MMM, YYYY"),
-      }
-      res.status(200).json({ 
+      };
+      res.status(200).json({
         success: true,
         savedQuiz,
         quiz,
         message: "quiz fetched successfully",
       });
-    }else{
+    } else {
       const quiz = {
-        quizType:savedQuiz.quizType,
+        quizType: savedQuiz.quizType,
         quizName: savedQuiz.quizName,
         questions: savedQuiz.questions,
         impressions: savedQuiz.impressions,
         createdOn: moment(savedQuiz.createdAt).format("DD MMM, YYYY"),
-      }
-      res.status(200).json({ 
+      };
+      res.status(200).json({
         success: true,
         savedQuiz,
         quiz,
         message: "quiz fetched successfully",
       });
     }
-    
   } catch (error) {
     console.log(error);
     res.status(500).json({
@@ -218,7 +329,6 @@ exports.quizAnalysis = async (req, res) => {
     });
   }
 };
-
 
 exports.getAllQuiz = async (req, res) => {
   try {
@@ -235,7 +345,7 @@ exports.getAllQuiz = async (req, res) => {
         quizName: true,
         _id: true,
         createdAt: true,
-        impressions:true
+        impressions: true,
       }
     );
 
@@ -250,7 +360,7 @@ exports.getAllQuiz = async (req, res) => {
       quizName: quiz.quizName,
       _id: quiz._id,
       createdOn: moment(quiz.createdAt).format("DD MMM, YYYY"),
-      impressions:quiz.impressions
+      impressions: quiz.impressions,
     }));
 
     console.log("quiz Exam  ", quizzes);
@@ -272,7 +382,7 @@ exports.getAllQuiz = async (req, res) => {
 
 exports.deleteQuiz = async (req, res) => {
   try {
-    const {quizId}  = req.params;
+    const { quizId } = req.params;
 
     // find quiz
     const quiz = await Quiz.findById(quizId);
@@ -352,7 +462,6 @@ exports.getDashboardStats = async (req, res) => {
   }
 };
 
-
 exports.updateQuiz = async (req, res) => {
   try {
     // Get user ID from request object
@@ -400,7 +509,7 @@ exports.updateQuiz = async (req, res) => {
 
     res.status(201).json({
       success: true,
-      quizId:updatedQuiz._id,
+      quizId: updatedQuiz._id,
       message: "Quiz updated successfully",
     });
   } catch (error) {
@@ -412,14 +521,6 @@ exports.updateQuiz = async (req, res) => {
     });
   }
 };
-
-
-
-
-
-
-
-
 
 // Helper Functions
 // validate Q&A quizType
