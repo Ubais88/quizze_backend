@@ -10,7 +10,6 @@ exports.authMiddleware = async (req, res, next) => {
     const token =
   req.headers.authorization && req.headers.authorization.split(" ")[1];
 
-    // console.log("token: " + token); 
     //if token missing, then return response
     if (!token) { 
       return res.status(401).json({
@@ -23,7 +22,7 @@ exports.authMiddleware = async (req, res, next) => {
     try {
       const decode = jwt.verify(token, process.env.JWT_SECRET);
       req.user = decode;
-    //   console.log("decode= ", decode);
+      //console.log("decode: ", decode);
     //   req.user = decode;
     } 
     catch (err) {
